@@ -674,11 +674,21 @@
     { maxHours: Infinity, coeff: 7.0, label: '24+ hod' },
   ];
 
-  function getCoeff(hours) {
-    for (const row of coeffTable) {
-      if (hours <= row.maxHours) return row;
+  function getInterpolatedCoeff(hours) {
+    if (hours <= 0) return 0;
+    if (hours <= coeffTable[0].maxHours) return coeffTable[0].coeff;
+    let prevMax = coeffTable[0].maxHours;
+    let prevCoeff = coeffTable[0].coeff;
+    for (let i = 1; i < coeffTable.length; i++) {
+      const row = coeffTable[i];
+      if (hours <= row.maxHours) {
+        const t = (hours - prevMax) / (row.maxHours - prevMax);
+        return prevCoeff + t * (row.coeff - prevCoeff);
+      }
+      prevMax = row.maxHours;
+      prevCoeff = row.coeff;
     }
-    return coeffTable[coeffTable.length - 1];
+    return coeffTable[coeffTable.length - 1].coeff;
   }
 
   function renderCoeffTable(activeIdx) {
@@ -700,16 +710,19 @@
     const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || 450;
     const marginPct = parseInt(document.getElementById('margin').value) || 0;
 
-    // Find active coeff
-    let activeIdx = 0;
-    for (let i = 0; i < coeffTable.length; i++) {
-      if (time <= coeffTable[i].maxHours || i === coeffTable.length - 1) {
-        activeIdx = i;
-        break;
+    // Interpolated coeff based on exact time (not just whole-hour brackets)
+    const coeff = getInterpolatedCoeff(time);
+
+    // activeIdx for table row highlighting
+    let activeIdx = -1;
+    if (time > 0) {
+      for (let i = 0; i < coeffTable.length; i++) {
+        if (time <= coeffTable[i].maxHours || i === coeffTable.length - 1) {
+          activeIdx = i;
+          break;
+        }
       }
     }
-    const coeffRow = coeffTable[activeIdx];
-    const coeff = time > 0 ? coeffRow.coeff : 0;
 
     // Material cost
     const matCost = weight * filamentPrice / 1000;
@@ -728,7 +741,7 @@
       matCost.toFixed(1) + ' Kč';
 
     document.getElementById('coeffDisplay').textContent =
-      '×' + coeff;
+      '×' + (coeff > 0 ? parseFloat(coeff.toFixed(2)) : 0);
 
     document.getElementById('marginLabel').textContent =
       marginPct + ' %';
