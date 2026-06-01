@@ -225,6 +225,14 @@
     font-weight: 400;
   }
 
+  .time-sep {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 0 2px;
+    user-select: none;
+  }
+
   .input-unit {
     padding: 0 14px;
     font-size: 13px;
@@ -541,8 +549,11 @@
       <div class="input-group">
         <label>Doba tisku</label>
         <div class="input-wrap">
-          <input type="number" id="time" placeholder="0" min="0" step="0.5" oninput="calculate()">
-          <span class="input-unit">hodin</span>
+          <input type="number" id="timeHours" placeholder="0" min="0" step="1" oninput="calculate()" style="max-width:70px">
+          <span class="input-unit">hod</span>
+          <span class="time-sep">:</span>
+          <input type="number" id="timeMinutes" placeholder="0" min="0" max="59" step="1" oninput="calculate()" style="max-width:70px">
+          <span class="input-unit">min</span>
         </div>
       </div>
     </div>
@@ -654,7 +665,9 @@
 
   function calculate() {
     const weight = parseFloat(document.getElementById('weight').value) || 0;
-    const time = parseFloat(document.getElementById('time').value) || 0;
+    const timeHours = parseFloat(document.getElementById('timeHours').value) || 0;
+    const timeMinutes = parseFloat(document.getElementById('timeMinutes').value) || 0;
+    const time = timeHours + timeMinutes / 60;
     const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || 450;
     const marginPct = parseInt(document.getElementById('margin').value) || 0;
 
