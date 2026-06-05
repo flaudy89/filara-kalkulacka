@@ -728,6 +728,7 @@
   let currentPeriodDays = 7;
   let allJobs = [];
   let printerData = null;
+  let weightCache = {};
 
   // ── TOKEN (jen pro přímý mód bez Workeru) ────────────
   function getToken() { return localStorage.getItem('prusa_token') || ''; }
@@ -796,10 +797,10 @@
   }
 
   function parseMat(name) {
-    if (!name) return null;
+    if (!name) return 'PLA';
     const u = name.toUpperCase();
     for (const m of KNOWN_MATS) if (u.includes('_' + m + '_') || u.includes('_' + m + '.')) return m;
-    return null;
+    return 'PLA'; // default
   }
 
   function matColor(mat) { return MAT_COLORS[mat] || MAT_COLORS.default; }
@@ -810,6 +811,14 @@
   }
 
   function hideError() { document.getElementById('errorBanner').classList.add('hidden'); }
+
+  // ── LOAD WEIGHT CACHE ─────────────────────────────────
+  async function loadWeightCache() {
+    try {
+      const res = await fetch(WORKER_URL + '/weights');
+      if (res.ok) weightCache = await res.json();
+    } catch {}
+  }
 
   // ── LOAD PRINTER STATUS ────────────────────────────────
   async function loadPrinterStatus() {
@@ -901,8 +910,20 @@
     document.getElementById('statPrintsOk').textContent = ok + ' úspěšných';
     document.getElementById('statTime').textContent = fmtDuration(totalSec);
     document.getElementById('statTimeMin').textContent = Math.round(totalSec / 60) + ' min celkem';
-    document.getElementById('statFilament').textContent = '–';
-    document.getElementById('statFilamentKg').textContent = 'Váha z cache';
+    // Spočítej váhu z cache
+    let totalG = 0;
+    for (const j of jobs) {
+      const e = weightCache[String(j.id)];
+      const w = e?.w ?? (typeof e === 'number' ? e : 0);
+      totalG += w;
+    }
+    if (totalG > 0) {
+      document.getElementById('statFilament').textContent = totalG.toFixed(0) + ' g';
+      document.getElementById('statFilamentKg').textContent = (totalG / 1000).toFixed(3) + ' kg';
+    } else {
+      document.getElementById('statFilament').textContent = '–';
+      document.getElementById('statFilamentKg').textContent = 'cache se načítá';
+    }
   }
 
   // ── RENDER MATERIALS ───────────────────────────────────
@@ -1026,6 +1047,9 @@
     btn.textContent = '↻ Načítám...';
     btn.classList.add('loading');
     document.getElementById('spinner').classList.remove('hidden');
+
+    // Váhy z cache (nekritické)
+    if (USE_WORKER) loadWeightCache().catch(() => {});
 
     // Stav tiskárny — kritické
     try {
