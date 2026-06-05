@@ -710,7 +710,18 @@
 
 <script>
   const PRINTER_UUID = '07e84241-3173-4e62-ac3d-f8ee09d89285';
-  const API = 'https://connect.prusa3d.com';
+
+  // ── Cloudflare Worker URL ─────────────────────────────────
+  // Po deployi Workeru sem vlož URL ve formátu: https://prusa-proxy.xxx.workers.dev
+  // Dokud Worker není nastaven, funguje přímý mód (vyžaduje token v localStorage)
+  const WORKER_URL = 'https://prusa-proxy.klaudy-filip.workers.dev';
+
+  const API = WORKER_URL
+    ? WORKER_URL + '/prusa'          // přes Worker (CORS OK, auto-refresh)
+    : 'https://connect.prusa3d.com'; // přímý mód (může selhat CORS)
+
+  const USE_WORKER = !!WORKER_URL;
+
   const KNOWN_MATS = ['PLA','PETG','ASA','ABS','TPU','FLEX','PC','HIPS','NYLON','PA'];
   const MAT_COLORS = { PLA:'#3B82F6', PETG:'#22C55E', ASA:'#8B5CF6', ABS:'#EF4444', TPU:'#F59E0B', default:'#FA6831' };
 
@@ -718,7 +729,7 @@
   let allJobs = [];
   let printerData = null;
 
-  // ── TOKEN ──────────────────────────────────────────────
+  // ── TOKEN (jen pro přímý mód bez Workeru) ────────────
   function getToken() { return localStorage.getItem('prusa_token') || ''; }
 
   function saveToken() {
@@ -730,29 +741,41 @@
   }
 
   function showTokenModal() {
+    if (USE_WORKER) {
+      // V Worker módu uživatel nepotřebuje token v prohlížeči
+      showError('Worker URL není nastavena nebo Worker nefunguje. Zkontroluj WORKER_URL v prusa.html.');
+      return;
+    }
     document.getElementById('tokenInput').value = getToken();
     document.getElementById('tokenModal').classList.remove('hidden');
   }
 
   // ── API ────────────────────────────────────────────────
   async function apiFetch(path, method = 'GET', body = null) {
-    const token = getToken();
-    if (!token) { showTokenModal(); throw new Error('no_token'); }
-
     const opts = {
       method,
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        'Accept': '*/*'
-      }
+      headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }
     };
+
+    if (!USE_WORKER) {
+      // Přímý mód — potřebuje token
+      const token = getToken();
+      if (!token) { showTokenModal(); throw new Error('no_token'); }
+      opts.headers['Authorization'] = 'Bearer ' + token;
+    }
+
     if (body) opts.body = JSON.stringify(body);
 
     const res = await fetch(API + path, opts);
 
     if (res.status === 401) {
-      showError('Token expiroval. Obnov ho kliknutím na záložku "Prusa Token" v prohlížeči a vlož nový.');
+      const data = await res.json().catch(() => ({}));
+      if (data.code === 'TOKEN_EXPIRED') {
+        showError('Token ve Workeru expiroval. Spusť aktualizaci přes Claude nebo vlož nový token do .env a restart Workeru.');
+      } else {
+        showError('Neautorizováno. ' + (USE_WORKER ? 'Zkontroluj Worker.' : 'Obnov token záložkou "Prusa Token".'));
+        if (!USE_WORKER) showTokenModal();
+      }
       throw new Error('unauthorized');
     }
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1041,7 +1064,7 @@
     }
   });
 
-  if (!getToken()) {
+  if (!USE_WORKER && !getToken()) {
     document.getElementById('spinner').classList.add('hidden');
     showTokenModal();
   } else {
