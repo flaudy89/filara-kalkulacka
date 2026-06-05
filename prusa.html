@@ -658,7 +658,8 @@
       <button class="period-btn" onclick="setPeriod(30)">Měsíc</button>
       <button class="period-btn" onclick="setPeriod(365)">Rok</button>
       <div class="calendar-wrap">
-        <button class="period-btn" onclick="toggleCalendar()" title="Vlastní rozsah">📅</button>
+        <button class="period-btn" id="calendarBtn" onclick="toggleCalendar()" title="Vlastní rozsah">📅</button>
+        <span id="dateRangeLabel" style="font-size:12px;color:var(--text-muted);align-self:center;display:none"></span>
         <div id="calendarDropdown" class="calendar-dropdown">
           <div class="date-range">
             <input type="date" id="dateFrom">
@@ -928,16 +929,19 @@
 
   // ── RENDER MATERIALS ───────────────────────────────────
   function renderMaterials(jobs) {
-    const matTime = {}, matCount = {};
+    const matTime = {}, matCount = {}, matWeight = {};
     let total = 0;
 
     for (const j of jobs) {
       const fname = j.file?.display_name || j.path?.split('/').pop() || '';
-      const mat = parseMat(fname) || '?';
+      const mat = parseMat(fname);
       const dur = j.time_printing ?? 0;
       matTime[mat] = (matTime[mat] || 0) + dur;
       matCount[mat] = (matCount[mat] || 0) + 1;
       total += dur;
+      const e = weightCache[String(j.id)];
+      const w = e?.w ?? (typeof e === 'number' ? e : 0);
+      matWeight[mat] = (matWeight[mat] || 0) + w;
     }
 
     if (!jobs.length) {
@@ -950,6 +954,8 @@
       const pct = total ? Math.round(secs / total * 100) : 0;
       const col = matColor(mat);
       const cnt = matCount[mat];
+      const g = matWeight[mat] || 0;
+      const gStr = g > 0 ? ` · ${g >= 1000 ? (g/1000).toFixed(2)+' kg' : g.toFixed(0)+' g'}` : '';
       return `
         <div class="material-row">
           <div class="material-top">
@@ -958,7 +964,7 @@
               ${mat}
               <span style="color:var(--text-muted);font-weight:400;font-size:13px">${cnt}× tisky</span>
             </div>
-            <div class="material-stats">${pct}% &nbsp;·&nbsp; ${fmtDuration(secs)}</div>
+            <div class="material-stats">${pct}% · ${fmtDuration(secs)}${gStr}</div>
           </div>
           <div class="mat-bar-bg">
             <div class="mat-bar-fill" style="width:${pct}%;background:${col}"></div>
@@ -1001,6 +1007,7 @@
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     document.getElementById('calendarDropdown').classList.remove('open');
+    document.getElementById('dateRangeLabel').style.display = 'none'; // skryj datum při výběru přednastaveného období
 
     const now = Math.floor(Date.now() / 1000);
     const from = now - days * 86400;
@@ -1017,7 +1024,14 @@
     if (!from || !to) return;
 
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('calendarBtn').classList.add('active');
     document.getElementById('calendarDropdown').classList.remove('open');
+
+    // Zobraz zvolený rozsah vedle kalendáře
+    const fmtD = d => new Date(d).toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric', year:'numeric' });
+    const label = document.getElementById('dateRangeLabel');
+    label.textContent = fmtD(from) + ' – ' + fmtD(to);
+    label.style.display = 'inline';
 
     const fromTs = Math.floor(new Date(from).getTime() / 1000);
     const toTs = Math.floor(new Date(to + 'T23:59:59').getTime() / 1000);
@@ -1064,20 +1078,20 @@
       }
     }
 
-    // Historie — nekritické, selhání je tiché
+    // Historie — nekritické
     try {
       const now = Math.floor(Date.now() / 1000);
       const from = now - currentPeriodDays * 86400;
       await loadHistory(from, now);
     } catch (e) {
       if (e.message !== 'unauthorized' && e.message !== 'no_token') {
-        // Zobraz jen nenápadnou zprávu místo červeného banneru
         document.getElementById('statsSection').classList.remove('hidden');
         document.getElementById('materialList').innerHTML =
-          '<p style="padding:16px;color:var(--text-muted);text-align:center">Statistiky momentálně nedostupné (Prusa server ' + e.message + '). Zkus Refresh za chvíli.</p>';
+          '<p style="padding:16px;color:var(--text-muted);text-align:center">Statistiky momentálně nedostupné. Zkus Refresh za chvíli.</p>';
         document.getElementById('recentList').innerHTML =
           '<p style="padding:16px;color:var(--text-muted);text-align:center">–</p>';
       }
+    } finally {
       btn.textContent = '↻ Refresh';
       btn.classList.remove('loading');
       document.getElementById('spinner').classList.add('hidden');
