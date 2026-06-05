@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prusa Core One – Filara</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FA6831;
+    --orange-dark: #E55A25;
+    --orange-light: #FFF0EB;
+    --bg: #F5F5F5;
+    --card: #FFFFFF;
+    --text: #222222;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --dark: #1A1A2E;
+    --dark-card: #232340;
+    --green: #10B981;
+    --green-light: #D1FAE5;
+    --red: #EF4444;
+    --yellow: #F59E0B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--dark);
+    padding: 0 24px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  }
+
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+
+  .header-logo-img {
+    height: 88px; width: 88px;
+    border-radius: 50%; object-fit: cover;
+  }
+
+  .header-brand {
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800; font-size: 30px;
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+
+  .header-sep { color: rgba(255,255,255,.2); font-size: 20px; font-weight: 300; margin: 0 2px; }
+
+  .app-title {
+    color: rgba(255,255,255,.5);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; font-size: 14px;
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+
+  .header-nav {
+    display: flex; align-items: center; gap: 2px;
+    position: absolute; left: 50%; transform: translateX(-50%);
+  }
+
+  .nav-tab {
+    color: rgba(255,255,255,.45);
+    text-decoration: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 7px 16px; border-radius: 20px;
+    transition: all .2s;
+    display: flex; align-items: center; gap: 7px;
+    border: none; background: none; cursor: pointer;
+  }
+
+  .nav-tab:hover { color: rgba(255,255,255,.8); background: rgba(255,255,255,.08); }
+  .nav-tab.active { color: #fff; background: rgba(255,255,255,.14); }
+
+  .refresh-btn {
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.6);
+    border: 1px solid rgba(255,255,255,.12);
+    padding: 6px 16px; border-radius: 20px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    white-space: nowrap;
+  }
+
+  .refresh-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+  .refresh-btn.loading { opacity: .6; cursor: not-allowed; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, var(--dark) 0%, #2D2B55 100%);
+    padding: 36px 24px 44px;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute; top: -50%; left: -20%;
+    width: 140%; height: 200%;
+    background: radial-gradient(ellipse at 70% 50%, rgba(250,104,49,.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800; font-size: clamp(26px, 4vw, 38px);
+    color: #fff; text-transform: uppercase;
+    letter-spacing: 2px; margin-bottom: 8px;
+    position: relative; display: flex;
+    align-items: center; justify-content: center; gap: 12px;
+  }
+
+  .hero h1 .prusa-logo-hero {
+    width: 36px; height: 36px;
+    flex-shrink: 0;
+  }
+
+  .hero h1 span { color: var(--orange); }
+
+  .hero-sub {
+    color: rgba(255,255,255,.55);
+    font-size: 14px; position: relative;
+    display: flex; align-items: center;
+    justify-content: center; gap: 10px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block;
+  }
+
+  .status-dot.online { background: var(--green); box-shadow: 0 0 0 3px rgba(16,185,129,.25); }
+  .status-dot.printing { background: var(--orange); box-shadow: 0 0 0 3px rgba(250,104,49,.25); animation: pulse 1.5s infinite; }
+  .status-dot.offline { background: #666; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(250,104,49,.25); }
+    50% { box-shadow: 0 0 0 6px rgba(250,104,49,.1); }
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 900px;
+    margin: -28px auto 40px;
+    padding: 0 20px;
+    position: relative;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 16px;
+    letter-spacing: .5px; text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .card-header .card-icon { font-size: 18px; }
+
+  /* ── CURRENT PRINT ── */
+  .print-card {
+    background: linear-gradient(135deg, var(--dark) 0%, #2D2B55 100%);
+    color: #fff;
+  }
+
+  .print-card .card-header {
+    border-bottom-color: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.7);
+  }
+
+  .state-badge {
+    margin-left: auto;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    letter-spacing: .8px; text-transform: uppercase;
+  }
+
+  .state-badge.printing { background: rgba(250,104,49,.2); color: var(--orange); }
+  .state-badge.paused { background: rgba(245,158,11,.2); color: var(--yellow); }
+  .state-badge.finished { background: rgba(16,185,129,.2); color: var(--green); }
+
+  .print-body { padding: 20px; }
+
+  .print-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 20px;
+    color: #fff; margin-bottom: 14px;
+    word-break: break-word;
+  }
+
+  .progress-bar {
+    background: rgba(255,255,255,.1);
+    border-radius: 100px; height: 8px;
+    margin-bottom: 10px; overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--orange), #FF8C5A);
+    transition: width .5s ease;
+  }
+
+  .print-meta {
+    display: flex; justify-content: space-between;
+    color: rgba(255,255,255,.5); font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .print-meta .pct { color: var(--orange); font-weight: 700; font-size: 16px; }
+
+  .temps-row {
+    display: flex; gap: 12px; margin-bottom: 20px;
+  }
+
+  .temp-item {
+    background: rgba(255,255,255,.06);
+    border-radius: 12px; padding: 12px 16px;
+    flex: 1; text-align: center;
+  }
+
+  .temp-label {
+    color: rgba(255,255,255,.4);
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px;
+    margin-bottom: 4px;
+  }
+
+  .temp-val {
+    font-size: 22px; font-weight: 700; color: #fff;
+  }
+
+  .temp-target {
+    color: rgba(255,255,255,.35);
+    font-size: 13px; margin-top: 2px;
+  }
+
+  .controls {
+    display: flex; gap: 10px;
+  }
+
+  .ctrl-btn {
+    flex: 1; padding: 11px 0;
+    border-radius: 10px; border: none;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+  }
+
+  .ctrl-btn.pause { background: rgba(245,158,11,.15); color: var(--yellow); }
+  .ctrl-btn.pause:hover { background: rgba(245,158,11,.25); }
+  .ctrl-btn.resume { background: rgba(16,185,129,.15); color: var(--green); }
+  .ctrl-btn.resume:hover { background: rgba(16,185,129,.25); }
+  .ctrl-btn.stop { background: rgba(239,68,68,.15); color: var(--red); }
+  .ctrl-btn.stop:hover { background: rgba(239,68,68,.25); }
+
+  /* ── PERIOD SELECTOR ── */
+  .period-row {
+    display: flex; align-items: center;
+    gap: 4px; margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .period-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 7px 16px; border-radius: 20px;
+    cursor: pointer; transition: all .2s;
+  }
+
+  .period-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .period-btn.active {
+    background: var(--orange); border-color: var(--orange);
+    color: #fff;
+  }
+
+  .calendar-wrap { position: relative; }
+
+  .calendar-dropdown {
+    display: none;
+    position: absolute; top: calc(100% + 8px); left: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    padding: 16px; z-index: 50;
+    min-width: 280px;
+  }
+
+  .calendar-dropdown.open { display: block; }
+
+  .date-range {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .date-range input[type="date"] {
+    flex: 1; padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px; font-family: 'Barlow', sans-serif;
+    font-size: 14px; color: var(--text);
+    outline: none;
+  }
+
+  .date-range input[type="date"]:focus { border-color: var(--orange); }
+
+  .apply-btn {
+    width: 100%; padding: 9px;
+    background: var(--orange); color: #fff;
+    border: none; border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 700; font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ── STATS GRID ── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    padding: 20px; text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800; font-size: 32px;
+    color: var(--orange); line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--text-muted); margin-bottom: 4px;
+  }
+
+  .stat-sub { font-size: 13px; color: var(--text-muted); }
+
+  /* ── MATERIAL BARS ── */
+  .material-list { padding: 16px 20px; }
+
+  .material-row {
+    margin-bottom: 14px;
+  }
+
+  .material-row:last-child { margin-bottom: 0; }
+
+  .material-top {
+    display: flex; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .material-name {
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .material-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  .material-stats { color: var(--text-muted); font-size: 13px; }
+
+  .mat-bar-bg {
+    background: var(--bg); border-radius: 100px;
+    height: 8px; overflow: hidden;
+  }
+
+  .mat-bar-fill {
+    height: 100%; border-radius: 100px;
+    transition: width .6s ease;
+  }
+
+  /* ── RECENT PRINTS ── */
+  .recent-list { padding: 0 20px 8px; }
+
+  .recent-item {
+    display: flex; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .recent-item:last-child { border-bottom: none; }
+
+  .recent-state {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .recent-state.ok { background: var(--green); }
+  .recent-state.fail { background: var(--red); }
+
+  .recent-name {
+    flex: 1; font-size: 14px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .recent-meta {
+    font-size: 12px; color: var(--text-muted);
+    text-align: right; flex-shrink: 0;
+  }
+
+  .recent-mat {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+    letter-spacing: .5px; flex-shrink: 0;
+  }
+
+  .recent-mat.pla { background: #EFF6FF; color: #3B82F6; }
+  .recent-mat.petg { background: #F0FDF4; color: #22C55E; }
+  .recent-mat.other { background: var(--orange-light); color: var(--orange); }
+
+  /* ── TOKEN MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 200; display: flex;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-box {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 32px; max-width: 480px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800; font-size: 22px;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .modal-desc {
+    color: var(--text-muted); font-size: 14px;
+    line-height: 1.6; margin-bottom: 20px;
+  }
+
+  .modal-desc ol { padding-left: 18px; }
+  .modal-desc li { margin-bottom: 4px; }
+
+  .modal-input {
+    width: 100%; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    font-family: 'Barlow', sans-serif; font-size: 13px;
+    margin-bottom: 16px; resize: vertical; min-height: 80px;
+    outline: none; color: var(--text);
+  }
+
+  .modal-input:focus { border-color: var(--orange); }
+
+  .modal-save {
+    width: 100%; padding: 13px;
+    background: var(--orange); color: #fff; border: none;
+    border-radius: 10px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 700; font-size: 15px;
+    cursor: pointer; transition: background .2s;
+  }
+
+  .modal-save:hover { background: var(--orange-dark); }
+
+  /* ── ERROR BANNER ── */
+  .error-banner {
+    background: #FEF2F2; border: 1px solid #FECACA;
+    color: #DC2626; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+    font-size: 14px; display: flex;
+    align-items: center; gap: 10px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ── SPINNER ── */
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 40px auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header { padding: 0 14px; }
+    .header-nav { position: static; transform: none; }
+    .logo-area .app-title { display: none; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat-value { font-size: 24px; }
+    main { padding: 0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOKEN MODAL ── -->
+<div id="tokenModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title">🔑 API Token</div>
+    <div class="modal-desc">
+      Zadej Bearer token z Prusa Connect:
+      <ol>
+        <li>Jdi na <strong>connect.prusa3d.com</strong></li>
+        <li>Klikni na záložku <strong>"Prusa Token"</strong> v prohlížeči</li>
+        <li>Token se zkopíruje – vlož ho sem</li>
+      </ol>
+      <br>Token vydrží ~10 hodin. Pak klikni ↻ Refresh a vlož nový.
+    </div>
+    <textarea id="tokenInput" class="modal-input" placeholder="eyJhbGciOiJSUzI1NiI..."></textarea>
+    <button class="modal-save" onclick="saveToken()">Uložit a načíst data</button>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo-area">
+    <img src="logo.png" class="header-logo-img" alt="Filara">
+    <span class="header-brand">FILARA</span>
+    <span class="header-sep">|</span>
+    <span class="app-title">3D Tisk</span>
+  </div>
+  <nav class="header-nav">
+    <a href="index.html" class="nav-tab">Kalkulačka</a>
+    <a href="prusa.html" class="nav-tab active">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="4" fill="#FA6831"/><path d="M5 4h7.5a4 4 0 010 8H8.5v4H5V4zm3.5 4.5h4a1.5 1.5 0 000-3h-4v3z" fill="white"/></svg>
+      Prusa Core One
+    </a>
+  </nav>
+  <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">↻ Refresh</button>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <h1>
+    <svg class="prusa-logo-hero" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="8" fill="#FA6831"/><path d="M9 8h15a8 8 0 010 16H17v8H9V8zm8 9h7a3 3 0 000-6h-7v6z" fill="white"/></svg>
+    PRUSA <span>CORE ONE</span>
+  </h1>
+  <div class="hero-sub">
+    <span id="statusDot" class="status-dot offline"></span>
+    <span id="statusText">Načítám...</span>
+    <span style="opacity:.3">•</span>
+    <span style="opacity:.5">Unetice</span>
+  </div>
+</section>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <!-- Error banner -->
+  <div id="errorBanner" class="error-banner hidden">
+    <span>⚠️</span>
+    <span id="errorMsg">Chyba</span>
+    <button onclick="showTokenModal()" style="margin-left:auto;background:none;border:none;color:#DC2626;font-weight:700;cursor:pointer;font-size:13px;">Aktualizovat token →</button>
+  </div>
+
+  <!-- Loading spinner -->
+  <div id="spinner" class="spinner"></div>
+
+  <!-- CURRENT PRINT CARD -->
+  <div id="currentPrintCard" class="card print-card hidden">
+    <div class="card-header">
+      <span class="card-icon">🖨️</span>
+      Aktuální tisk
+      <span id="printStateBadge" class="state-badge printing">Tiskne</span>
+    </div>
+    <div class="print-body">
+      <div class="print-name" id="printName">-</div>
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="print-meta">
+        <span class="pct" id="progressPct">0%</span>
+        <span id="timeRemaining">-</span>
+      </div>
+      <div class="temps-row">
+        <div class="temp-item">
+          <div class="temp-label">Tryska</div>
+          <div class="temp-val" id="nozzleTemp">–</div>
+          <div class="temp-target" id="nozzleTarget">→ –</div>
+        </div>
+        <div class="temp-item">
+          <div class="temp-label">Podložka</div>
+          <div class="temp-val" id="bedTemp">–</div>
+          <div class="temp-target" id="bedTarget">→ –</div>
+        </div>
+        <div class="temp-item">
+          <div class="temp-label">Komora</div>
+          <div class="temp-val" id="chamberTemp">–</div>
+          <div class="temp-target" style="color:rgba(255,255,255,.35)">°C</div>
+        </div>
+        <div class="temp-item">
+          <div class="temp-label">Rychlost</div>
+          <div class="temp-val" id="printSpeed">–</div>
+          <div class="temp-target" style="color:rgba(255,255,255,.35)">%</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="pauseBtn" class="ctrl-btn pause" onclick="controlPrint('PAUSED')">⏸ Pozastavit</button>
+        <button id="resumeBtn" class="ctrl-btn resume hidden" onclick="controlPrint('PRINTING')">▶ Pokračovat</button>
+        <button class="ctrl-btn stop" onclick="confirmStop()">⏹ Zastavit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS SECTION -->
+  <div id="statsSection" class="hidden">
+
+    <!-- Period selector -->
+    <div class="period-row">
+      <button class="period-btn" onclick="setPeriod(1)">1 den</button>
+      <button class="period-btn" onclick="setPeriod(3)">3 dny</button>
+      <button class="period-btn active" onclick="setPeriod(7)">Týden</button>
+      <button class="period-btn" onclick="setPeriod(30)">Měsíc</button>
+      <button class="period-btn" onclick="setPeriod(365)">Rok</button>
+      <div class="calendar-wrap">
+        <button class="period-btn" onclick="toggleCalendar()" title="Vlastní rozsah">📅</button>
+        <div id="calendarDropdown" class="calendar-dropdown">
+          <div class="date-range">
+            <input type="date" id="dateFrom">
+            <span>–</span>
+            <input type="date" id="dateTo">
+          </div>
+          <button class="apply-btn" onclick="applyDateRange()">Použít</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statPrints">–</div>
+        <div class="stat-label">Tisků</div>
+        <div class="stat-sub" id="statPrintsOk">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statTime">–</div>
+        <div class="stat-label">Čas tisku</div>
+        <div class="stat-sub" id="statTimeMin">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statFilament">–</div>
+        <div class="stat-label">Filament</div>
+        <div class="stat-sub" id="statFilamentKg">–</div>
+      </div>
+    </div>
+
+    <!-- Material breakdown -->
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🎨</span>Materiály</div>
+      <div class="material-list" id="materialList">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- Recent prints -->
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📋</span>Poslední tisky</div>
+      <div class="recent-list" id="recentList">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+  </div><!-- /statsSection -->
+</main>
+
+<script>
+  const PRINTER_UUID = '07e84241-3173-4e62-ac3d-f8ee09d89285';
+  const API = 'https://connect.prusa3d.com';
+  const KNOWN_MATS = ['PLA','PETG','ASA','ABS','TPU','FLEX','PC','HIPS','NYLON','PA'];
+  const MAT_COLORS = { PLA:'#3B82F6', PETG:'#22C55E', ASA:'#8B5CF6', ABS:'#EF4444', TPU:'#F59E0B', default:'#FA6831' };
+
+  let currentPeriodDays = 7;
+  let allJobs = [];
+  let printerData = null;
+
+  // ── TOKEN ──────────────────────────────────────────────
+  function getToken() { return localStorage.getItem('prusa_token') || ''; }
+
+  function saveToken() {
+    const t = document.getElementById('tokenInput').value.trim();
+    if (!t) return;
+    localStorage.setItem('prusa_token', t);
+    document.getElementById('tokenModal').classList.add('hidden');
+    refreshAll();
+  }
+
+  function showTokenModal() {
+    document.getElementById('tokenInput').value = getToken();
+    document.getElementById('tokenModal').classList.remove('hidden');
+  }
+
+  // ── API ────────────────────────────────────────────────
+  async function apiFetch(path, method = 'GET', body = null) {
+    const token = getToken();
+    if (!token) { showTokenModal(); throw new Error('no_token'); }
+
+    const opts = {
+      method,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Accept': '*/*'
+      }
+    };
+    if (body) opts.body = JSON.stringify(body);
+
+    const res = await fetch(API + path, opts);
+
+    if (res.status === 401) {
+      showError('Token expiroval. Obnov ho kliknutím na záložku "Prusa Token" v prohlížeči a vlož nový.');
+      throw new Error('unauthorized');
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    return res.json();
+  }
+
+  // ── UTILS ──────────────────────────────────────────────
+  function fmtDuration(s) {
+    if (!s) return '–';
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '–';
+    return new Date(ts * 1000).toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric' });
+  }
+
+  function parseMat(name) {
+    if (!name) return null;
+    const u = name.toUpperCase();
+    for (const m of KNOWN_MATS) if (u.includes('_' + m + '_') || u.includes('_' + m + '.')) return m;
+    return null;
+  }
+
+  function matColor(mat) { return MAT_COLORS[mat] || MAT_COLORS.default; }
+
+  function showError(msg) {
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorBanner').classList.remove('hidden');
+  }
+
+  function hideError() { document.getElementById('errorBanner').classList.add('hidden'); }
+
+  // ── LOAD PRINTER STATUS ────────────────────────────────
+  async function loadPrinterStatus() {
+    const data = await apiFetch('/app/printers/' + PRINTER_UUID);
+    printerData = data;
+
+    const state = (data.state || data.connect_state || '').toUpperCase();
+    const isPrinting = state === 'PRINTING';
+    const isPaused = state === 'PAUSED';
+    const isActive = isPrinting || isPaused;
+
+    // Hero status
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    dot.className = 'status-dot ' + (isActive ? (isPrinting ? 'printing' : 'online') : 'online');
+    txt.textContent = isPrinting ? 'Tiskne' : isPaused ? 'Pozastaveno' : state === 'FINISHED' ? 'Hotovo' : 'Volná';
+
+    // Current print card
+    const card = document.getElementById('currentPrintCard');
+    if (isActive) {
+      card.classList.remove('hidden');
+
+      const job = data.job_info || data.job || {};
+      const fname = job.display_name || job.file?.display_name || '–';
+      document.getElementById('printName').textContent = fname;
+
+      const pct = Math.round(job.progress ?? 0);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressPct').textContent = pct + '%';
+
+      const rem = job.time_remaining;
+      document.getElementById('timeRemaining').textContent = rem != null && rem >= 0
+        ? 'Zbývá: ' + fmtDuration(rem) : 'Kalkuluji...';
+
+      // Temps
+      const t = data.temp || {};
+      const n = t.temp_nozzle ?? t.nozzle?.actual ?? '–';
+      const nt = t.target_nozzle ?? t.nozzle?.target ?? '–';
+      const b = t.temp_bed ?? t.bed?.actual ?? '–';
+      const bt = t.target_bed ?? t.bed?.target ?? '–';
+      document.getElementById('nozzleTemp').textContent = (n !== '–' ? Math.round(n) : '–') + '°C';
+      document.getElementById('nozzleTarget').textContent = '→ ' + (nt !== '–' ? Math.round(nt) : '–') + '°C';
+      document.getElementById('bedTemp').textContent = (b !== '–' ? Math.round(b) : '–') + '°C';
+      document.getElementById('bedTarget').textContent = '→ ' + (bt !== '–' ? Math.round(bt) : '–') + '°C';
+      document.getElementById('chamberTemp').textContent = data.chamber?.temp != null ? Math.round(data.chamber.temp) : '–';
+      document.getElementById('printSpeed').textContent = data.speed ?? '–';
+
+      // Badge + buttons
+      const badge = document.getElementById('printStateBadge');
+      badge.textContent = isPaused ? 'Pozastaveno' : 'Tiskne';
+      badge.className = 'state-badge ' + (isPaused ? 'paused' : 'printing');
+
+      document.getElementById('pauseBtn').classList.toggle('hidden', isPaused);
+      document.getElementById('resumeBtn').classList.toggle('hidden', isPrinting);
+    } else {
+      card.classList.add('hidden');
+    }
+  }
+
+  // ── LOAD HISTORY ───────────────────────────────────────
+  async function loadHistory(fromTs, toTs) {
+    // Fetch enough jobs — use limit 500, filter client-side
+    const data = await apiFetch(
+      '/app/printers/' + PRINTER_UUID +
+      '/jobs?limit=500&offset=0&state=FIN_OK&state=FIN_ERROR&state=FIN_STOPPED&state=UNKNOWN'
+    );
+    const jobs = data.jobs ?? data.prints ?? (Array.isArray(data) ? data : []);
+    allJobs = jobs;
+    filterAndRender(fromTs, toTs);
+  }
+
+  function filterAndRender(fromTs, toTs) {
+    const filtered = allJobs.filter(j => {
+      const s = j.start ?? 0;
+      return s >= fromTs && s <= toTs;
+    });
+    renderStats(filtered);
+    renderMaterials(filtered);
+    renderRecent(filtered.slice(0, 20));
+    document.getElementById('statsSection').classList.remove('hidden');
+  }
+
+  // ── RENDER STATS ───────────────────────────────────────
+  function renderStats(jobs) {
+    const ok = jobs.filter(j => (j.state || '').includes('OK')).length;
+    const totalSec = jobs.reduce((a, j) => a + (j.time_printing ?? 0), 0);
+
+    document.getElementById('statPrints').textContent = jobs.length;
+    document.getElementById('statPrintsOk').textContent = ok + ' úspěšných';
+    document.getElementById('statTime').textContent = fmtDuration(totalSec);
+    document.getElementById('statTimeMin').textContent = Math.round(totalSec / 60) + ' min celkem';
+    document.getElementById('statFilament').textContent = '–';
+    document.getElementById('statFilamentKg').textContent = 'Váha z cache';
+  }
+
+  // ── RENDER MATERIALS ───────────────────────────────────
+  function renderMaterials(jobs) {
+    const matTime = {}, matCount = {};
+    let total = 0;
+
+    for (const j of jobs) {
+      const fname = j.file?.display_name || j.path?.split('/').pop() || '';
+      const mat = parseMat(fname) || '?';
+      const dur = j.time_printing ?? 0;
+      matTime[mat] = (matTime[mat] || 0) + dur;
+      matCount[mat] = (matCount[mat] || 0) + 1;
+      total += dur;
+    }
+
+    if (!jobs.length) {
+      document.getElementById('materialList').innerHTML = '<p style="padding:16px;color:var(--text-muted);text-align:center">Žádné tisky v tomto období</p>';
+      return;
+    }
+
+    const sorted = Object.entries(matTime).sort((a, b) => b[1] - a[1]);
+    const html = sorted.map(([mat, secs]) => {
+      const pct = total ? Math.round(secs / total * 100) : 0;
+      const col = matColor(mat);
+      const cnt = matCount[mat];
+      return `
+        <div class="material-row">
+          <div class="material-top">
+            <div class="material-name">
+              <span class="material-dot" style="background:${col}"></span>
+              ${mat}
+              <span style="color:var(--text-muted);font-weight:400;font-size:13px">${cnt}× tisky</span>
+            </div>
+            <div class="material-stats">${pct}% &nbsp;·&nbsp; ${fmtDuration(secs)}</div>
+          </div>
+          <div class="mat-bar-bg">
+            <div class="mat-bar-fill" style="width:${pct}%;background:${col}"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('materialList').innerHTML = html;
+  }
+
+  // ── RENDER RECENT ──────────────────────────────────────
+  function renderRecent(jobs) {
+    if (!jobs.length) {
+      document.getElementById('recentList').innerHTML = '<p style="padding:16px;color:var(--text-muted);text-align:center">Žádné tisky v tomto období</p>';
+      return;
+    }
+
+    const html = jobs.map(j => {
+      const fname = j.file?.display_name || j.path?.split('/').pop() || '–';
+      const mat = parseMat(fname);
+      const ok = (j.state || '').includes('OK');
+      const matClass = mat === 'PLA' ? 'pla' : mat === 'PETG' ? 'petg' : 'other';
+      const dur = fmtDuration(j.time_printing ?? (j.end && j.start ? j.end - j.start : 0));
+      const dateStr = fmtDate(j.start);
+      return `
+        <div class="recent-item">
+          <span class="recent-state ${ok ? 'ok' : 'fail'}"></span>
+          <span class="recent-name" title="${fname}">${fname}</span>
+          ${mat ? `<span class="recent-mat ${matClass}">${mat}</span>` : ''}
+          <span class="recent-meta">${dateStr}<br>${dur}</span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('recentList').innerHTML = html;
+  }
+
+  // ── PERIOD ─────────────────────────────────────────────
+  function setPeriod(days) {
+    currentPeriodDays = days;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('calendarDropdown').classList.remove('open');
+
+    const now = Math.floor(Date.now() / 1000);
+    const from = now - days * 86400;
+    filterAndRender(from, now);
+  }
+
+  function toggleCalendar() {
+    document.getElementById('calendarDropdown').classList.toggle('open');
+  }
+
+  function applyDateRange() {
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    if (!from || !to) return;
+
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('calendarDropdown').classList.remove('open');
+
+    const fromTs = Math.floor(new Date(from).getTime() / 1000);
+    const toTs = Math.floor(new Date(to + 'T23:59:59').getTime() / 1000);
+    filterAndRender(fromTs, toTs);
+  }
+
+  // ── CONTROLS ───────────────────────────────────────────
+  async function controlPrint(newState) {
+    try {
+      await apiFetch('/app/printers/' + PRINTER_UUID + '/job', 'PUT', { state: newState });
+      setTimeout(refreshAll, 1500);
+    } catch (e) {
+      if (e.message !== 'unauthorized') showError('Chyba ovládání: ' + e.message);
+    }
+  }
+
+  function confirmStop() {
+    if (confirm('Opravdu zastavit aktuální tisk? Tato akce je nevratná.')) {
+      controlPrint('STOPPED');
+    }
+  }
+
+  // ── REFRESH ────────────────────────────────────────────
+  async function refreshAll() {
+    hideError();
+    const btn = document.getElementById('refreshBtn');
+    btn.textContent = '↻ Načítám...';
+    btn.classList.add('loading');
+    document.getElementById('spinner').classList.remove('hidden');
+
+    try {
+      await loadPrinterStatus();
+
+      const now = Math.floor(Date.now() / 1000);
+      const from = now - currentPeriodDays * 86400;
+      await loadHistory(from, now);
+
+    } catch (e) {
+      if (e.message !== 'unauthorized' && e.message !== 'no_token') {
+        // Possible CORS issue
+        if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
+          showError('CORS chyba: Prusa Connect API neumožňuje přístup z prohlížeče. Kontaktuj správce pro nastavení proxy.');
+        } else {
+          showError('Chyba: ' + e.message);
+        }
+      }
+    } finally {
+      btn.textContent = '↻ Refresh';
+      btn.classList.remove('loading');
+      document.getElementById('spinner').classList.add('hidden');
+    }
+  }
+
+  // ── INIT ───────────────────────────────────────────────
+  // Set default calendar dates
+  const today = new Date();
+  const weekAgo = new Date(today - 7 * 86400000);
+  document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+  document.getElementById('dateFrom').value = weekAgo.toISOString().split('T')[0];
+
+  // Close calendar on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.calendar-wrap')) {
+      document.getElementById('calendarDropdown').classList.remove('open');
+    }
+  });
+
+  if (!getToken()) {
+    document.getElementById('spinner').classList.add('hidden');
+    showTokenModal();
+  } else {
+    refreshAll();
+  }
+</script>
+</body>
+</html>
