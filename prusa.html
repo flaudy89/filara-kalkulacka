@@ -1027,23 +1027,33 @@
     btn.classList.add('loading');
     document.getElementById('spinner').classList.remove('hidden');
 
+    // Stav tiskárny — kritické
     try {
       await loadPrinterStatus();
+    } catch (e) {
+      if (e.message !== 'unauthorized' && e.message !== 'no_token') {
+        if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
+          showError('CORS chyba — kontaktuj správce.');
+        } else {
+          showError('Tiskárna nedostupná: ' + e.message);
+        }
+      }
+    }
 
+    // Historie — nekritické, selhání je tiché
+    try {
       const now = Math.floor(Date.now() / 1000);
       const from = now - currentPeriodDays * 86400;
       await loadHistory(from, now);
-
     } catch (e) {
       if (e.message !== 'unauthorized' && e.message !== 'no_token') {
-        // Possible CORS issue
-        if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
-          showError('CORS chyba: Prusa Connect API neumožňuje přístup z prohlížeče. Kontaktuj správce pro nastavení proxy.');
-        } else {
-          showError('Chyba: ' + e.message);
-        }
+        // Zobraz jen nenápadnou zprávu místo červeného banneru
+        document.getElementById('statsSection').classList.remove('hidden');
+        document.getElementById('materialList').innerHTML =
+          '<p style="padding:16px;color:var(--text-muted);text-align:center">Statistiky momentálně nedostupné (Prusa server ' + e.message + '). Zkus Refresh za chvíli.</p>';
+        document.getElementById('recentList').innerHTML =
+          '<p style="padding:16px;color:var(--text-muted);text-align:center">–</p>';
       }
-    } finally {
       btn.textContent = '↻ Refresh';
       btn.classList.remove('loading');
       document.getElementById('spinner').classList.add('hidden');
