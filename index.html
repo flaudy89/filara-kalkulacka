@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kalkulačka ceny 3D tisku – Filara</title>
+<script>
+(function() {
+  var saved = localStorage.getItem('filara-theme');
+  var theme = saved || ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -19,6 +26,34 @@
     --dark-card: #232340;
     --green: #10B981;
     --green-light: #D1FAE5;
+    --shadow-1: rgba(0,0,0,.25);
+    --shadow-2: rgba(0,0,0,.08);
+    --input-bg: #fff;
+    --coeff-bg: #F9FAFB;
+    --coeff-border: #f0f0f0;
+    --placeholder: #bbb;
+    --final-label: #065F46;
+    color-scheme: light;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #15151F;
+    --card: #1E1E2E;
+    --text: #EDEDF2;
+    --text-muted: #9797A8;
+    --border: #34344A;
+    --dark: #0F0F1A;
+    --dark-card: #1A1A2E;
+    --orange-light: #3A2A22;
+    --green-light: #10332A;
+    --shadow-1: rgba(0,0,0,.5);
+    --shadow-2: rgba(0,0,0,.35);
+    --input-bg: #292940;
+    --coeff-bg: #23233A;
+    --coeff-border: #34344A;
+    --placeholder: #6B6B80;
+    --final-label: #6EE7B7;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,6 +63,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    transition: background .25s ease, color .25s ease;
   }
 
   /* ── HEADER ── */
@@ -41,7 +77,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    box-shadow: 0 2px 12px var(--shadow-1);
   }
 
   .logo-area {
@@ -142,6 +178,55 @@
 
   .refresh-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
 
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* ── THEME SWITCH ── */
+  .theme-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .theme-switch .theme-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #FFC933;
+    box-shadow: 0 1px 4px rgba(0,0,0,.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    transition: transform .3s ease, background .3s ease;
+  }
+
+  .theme-switch .theme-thumb::before {
+    content: "☀️";
+  }
+
+  html[data-theme="dark"] .theme-switch .theme-thumb {
+    transform: translateX(24px);
+    background: #8A8AA3;
+  }
+
+  html[data-theme="dark"] .theme-switch .theme-thumb::before {
+    content: "🌙";
+  }
+
   /* ── HERO ── */
   .hero {
     background: linear-gradient(135deg, var(--dark) 0%, #2D2B55 100%);
@@ -195,7 +280,7 @@
   .calc-card {
     background: var(--card);
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    box-shadow: 0 4px 24px var(--shadow-2);
     overflow: hidden;
   }
 
@@ -268,7 +353,7 @@
   }
 
   .input-wrap input::placeholder {
-    color: #bbb;
+    color: var(--placeholder);
     font-weight: 400;
   }
 
@@ -317,7 +402,7 @@
   .filament-row .input-wrap {
     flex: 1;
     max-width: 160px;
-    background: #fff;
+    background: var(--input-bg);
     border-color: rgba(250,104,49,.2);
   }
 
@@ -330,7 +415,7 @@
   .coeff-info {
     margin: 0 28px 24px;
     padding: 16px 20px;
-    background: #F9FAFB;
+    background: var(--coeff-bg);
     border: 1px dashed var(--border);
     border-radius: 10px;
   }
@@ -389,7 +474,7 @@
 
   .coeff-table td {
     padding: 6px 8px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--coeff-border);
   }
 
   .coeff-table tr.active td {
@@ -441,6 +526,12 @@
     font-size: 28px;
     color: rgba(255,255,255,.5);
     margin-left: 4px;
+  }
+
+  .min-fee-note {
+    font-size: 11px;
+    color: rgba(255,255,255,.4);
+    margin-top: 4px;
   }
 
   .result-breakdown {
@@ -539,7 +630,7 @@
   .final-label {
     font-weight: 700;
     font-size: 14px;
-    color: #065F46;
+    color: var(--final-label);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -598,7 +689,12 @@
       Prusa Core One
     </a>
   </nav>
-  <button class="refresh-btn" onclick="location.reload()">↻ Refresh</button>
+  <div class="header-right">
+    <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()" aria-label="Přepnout světlý/tmavý režim" title="Přepnout světlý/tmavý režim">
+      <span class="theme-thumb"></span>
+    </button>
+    <button class="refresh-btn" onclick="location.reload()">↻ Refresh</button>
+  </div>
 </header>
 
 <!-- HERO -->
@@ -672,6 +768,7 @@
         <div class="price-display" id="priceDisplay">
           0<span class="currency">Kč</span>
         </div>
+        <div class="min-fee-note" id="minFeeNote" hidden>Zahrnuje minimální poplatek 50 Kč</div>
       </div>
       <div class="result-breakdown" id="breakdown">
         <div class="breakdown-item">
@@ -711,6 +808,13 @@
 </footer>
 
 <script>
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('filara-theme', next);
+  }
+
   // Koeficienty – plynulejší škála
   const coeffTable = [
     { maxHours: 1,   coeff: 2.5, label: 'do 1 hod' },
@@ -756,6 +860,8 @@
     `).join('');
   }
 
+  const MIN_FEE = 50; // minimální poplatek za výrobu (manipulace, nastavení tisku)
+
   function calculate() {
     const weight = parseFloat(document.getElementById('weight').value) || 0;
     const timeHours = parseFloat(document.getElementById('timeHours').value) || 0;
@@ -781,8 +887,11 @@
     // Material cost
     const matCost = weight * filamentPrice / 1000;
 
-    // Production price
-    const prodPrice = matCost * coeff;
+    // Production price (s minimálním poplatkem za manipulaci u malých tisků)
+    const rawProdPrice = matCost * coeff;
+    const hasInput = weight > 0 && time > 0;
+    const prodPrice = hasInput ? Math.max(rawProdPrice, MIN_FEE) : rawProdPrice;
+    const minFeeApplied = hasInput && prodPrice > rawProdPrice;
 
     // Final with margin
     const finalPriceVal = prodPrice * (1 + marginPct / 100);
@@ -790,6 +899,8 @@
     // Update UI
     document.getElementById('priceDisplay').innerHTML =
       Math.round(prodPrice) + '<span class="currency">Kč</span>';
+
+    document.getElementById('minFeeNote').hidden = !minFeeApplied;
 
     document.getElementById('matCost').textContent =
       matCost.toFixed(1) + ' Kč';
