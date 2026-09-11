@@ -7,6 +7,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1A1A2E">
 <title>Kalkulačka 3D tisku – Filara</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<script>
+(function() {
+  var saved = localStorage.getItem('filara-theme');
+  var theme = saved || ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -22,7 +32,23 @@
     --dark2: #2D2B55;
     --green: #34C759;
     --green-light: #D1FAE5;
+    --icon-blue-bg: #EEF2FF;
+    --icon-yellow-bg: #FEF3C7;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #15151F;
+    --card: #1E1E2E;
+    --text: #EDEDF2;
+    --text-muted: #9797A8;
+    --border: #34344A;
+    --orange-light: #3A2A22;
+    --green-light: #10332A;
+    --icon-blue-bg: #23264A;
+    --icon-yellow-bg: #3A3320;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -101,6 +127,49 @@
     border-radius: 20px;
     text-transform: uppercase;
     letter-spacing: .8px;
+  }
+
+  /* ── THEME SWITCH ── */
+  .theme-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .theme-switch .theme-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFC933;
+    box-shadow: 0 1px 4px rgba(0,0,0,.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1;
+    transition: transform .3s ease, background .3s ease;
+  }
+
+  .theme-switch .theme-thumb::before {
+    content: "☀️";
+  }
+
+  html[data-theme="dark"] .theme-switch .theme-thumb {
+    transform: translateX(22px);
+    background: #8A8AA3;
+  }
+
+  html[data-theme="dark"] .theme-switch .theme-thumb::before {
+    content: "🌙";
   }
 
   /* ── HERO (compact) ── */
@@ -435,6 +504,36 @@
     box-shadow: 0 2px 10px rgba(250,104,49,.3);
   }
 
+  /* ── DETAILS (skryté před zákazníkem) ── */
+  .details-content {
+    padding: 4px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .detail-row strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .details-content .detail-chip {
+    color: var(--text-muted);
+  }
+
+  .details-content .detail-chip strong {
+    color: var(--text);
+  }
+
   /* ── STICKY BOTTOM BAR ── */
   .bottom-bar {
     position: fixed;
@@ -442,7 +541,7 @@
     left: 0;
     right: 0;
     z-index: 200;
-    background: #fff;
+    background: var(--card);
     border-top: 1px solid var(--border);
     padding: 12px 16px calc(12px + var(--safe-bottom));
     display: flex;
@@ -529,7 +628,9 @@
     <span class="header-sep">|</span>
     <span class="app-title">Kalkulačka</span>
   </div>
-  <span class="header-badge">Beta</span>
+  <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()" aria-label="Přepnout světlý/tmavý režim" title="Přepnout světlý/tmavý režim">
+    <span class="theme-thumb"></span>
+  </button>
 </header>
 
 <!-- HERO -->
@@ -557,7 +658,7 @@
       </div>
     </div>
     <div class="input-row">
-      <div class="input-row-icon" style="background: #EEF2FF;">
+      <div class="input-row-icon" style="background: var(--icon-blue-bg);">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="#818CF8" stroke-width="1.8"/><path d="M9 5.5V9l3 2" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="input-row-label">
@@ -570,7 +671,7 @@
       </div>
     </div>
     <div class="input-row">
-      <div class="input-row-icon" style="background: #FEF3C7;">
+      <div class="input-row-icon" style="background: var(--icon-yellow-bg);">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="#F59E0B" stroke-width="1.8"/><circle cx="9" cy="9" r="2.5" stroke="#F59E0B" stroke-width="1.5"/></svg>
       </div>
       <div class="input-row-label">
@@ -580,22 +681,6 @@
       <div class="input-field">
         <input type="number" id="filamentPrice" value="450" min="0" step="10" inputmode="decimal" oninput="calculate()">
         <span class="unit">Kč</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Result -->
-  <div class="result-card-inner">
-    <div class="result-label">Výrobní cena</div>
-    <div class="result-price" id="priceDisplay">0<span class="curr"> Kč</span></div>
-    <div class="result-details">
-      <div class="detail-chip">
-        <span class="chip-dot" style="background: var(--orange)"></span>
-        Materiál: <strong id="matCost">&nbsp;0 Kč</strong>
-      </div>
-      <div class="detail-chip">
-        <span class="chip-dot" style="background: #818CF8"></span>
-        Koeficient: <strong id="coeffDisplay">&nbsp;×0</strong>
       </div>
     </div>
   </div>
@@ -614,14 +699,34 @@
     </div>
   </div>
 
-  <!-- Margin Card -->
+  <!-- Podrobněji (materiál, koeficient, marže – skryté před zákazníkem) -->
   <div class="card">
-    <div class="margin-row">
-      <div class="margin-header">
-        <label>Vaše marže</label>
-        <span class="margin-val" id="marginLabel">0 %</span>
+    <div class="accordion-toggle" onclick="toggleDetails()">
+      <div class="accordion-left">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#8E8E93" stroke-width="1.5"/><path d="M8 5v3.5M8 10.5v.5" stroke="#8E8E93" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Podrobněji
       </div>
-      <input type="range" id="margin" min="0" max="200" value="0" oninput="calculate()">
+      <svg class="accordion-arrow" id="detailsArrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#8E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="accordion-body" id="detailsAccordion">
+      <div class="details-content">
+        <div class="detail-row">
+          Výrobní cena <strong id="prodPriceDisplay">0 Kč</strong>
+        </div>
+        <div class="detail-chip">
+          <span class="chip-dot" style="background: var(--orange)"></span>
+          Materiál: <strong id="matCost">&nbsp;0 Kč</strong>
+        </div>
+        <div class="detail-chip">
+          <span class="chip-dot" style="background: #818CF8"></span>
+          Koeficient: <strong id="coeffDisplay">&nbsp;×0</strong>
+        </div>
+        <div class="margin-header" style="margin-top:4px">
+          <label>Vaše marže</label>
+          <span class="margin-val" id="marginLabel">0 %</span>
+        </div>
+        <input type="range" id="margin" min="0" max="200" value="0" oninput="calculate()">
+      </div>
     </div>
   </div>
 
@@ -638,7 +743,6 @@
     </div>
     <div class="bottom-text">
       <strong>Prodejní cena</strong>
-      s marží <span id="marginInline">0 %</span>
     </div>
   </div>
   <div class="bottom-price" id="finalPrice">0<span class="bcurr"> Kč</span></div>
@@ -698,8 +802,8 @@
     const prodPrice = matCost * coeff;
     const finalPriceVal = prodPrice * (1 + marginPct / 100);
 
-    document.getElementById('priceDisplay').innerHTML =
-      Math.round(prodPrice) + '<span class="curr"> Kč</span>';
+    document.getElementById('prodPriceDisplay').textContent =
+      Math.round(prodPrice) + ' Kč';
 
     document.getElementById('matCost').innerHTML =
       '&nbsp;' + matCost.toFixed(1) + ' Kč';
@@ -708,7 +812,6 @@
       '&nbsp;×' + coeff;
 
     document.getElementById('marginLabel').textContent = marginPct + ' %';
-    document.getElementById('marginInline').textContent = marginPct + ' %';
 
     document.getElementById('finalPrice').innerHTML =
       Math.round(finalPriceVal) + '<span class="bcurr"> Kč</span>';
@@ -716,8 +819,26 @@
     renderCoeffGrid(time > 0 ? activeIdx : -1);
   }
 
+  function toggleDetails() {
+    const open = document.getElementById('detailsAccordion').classList.toggle('open');
+    document.getElementById('detailsArrow').classList.toggle('open', open);
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('filara-theme', next);
+  }
+
   // Init
   renderCoeffGrid(-1);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>

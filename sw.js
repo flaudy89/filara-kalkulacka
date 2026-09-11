@@ -1,8 +1,9 @@
-const CACHE = 'filara-kalkulacka-v1';
+const CACHE = 'filara-kalkulacka-v2';
 const ASSETS = [
   './',
   './index.html',
   './prusa.html',
+  './3d-print-calculator-mobile.html',
   './manifest.json',
   './logo.png',
   './icons/icon-192.png',
