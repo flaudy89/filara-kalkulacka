@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zásady ochrany osobních údajů – Filara Kalkulačka</title>
+<meta name="theme-color" content="#1A1A2E">
+<style>
+  :root {
+    --orange: #FA6831;
+    --bg: #F5F5F5;
+    --card: #FFFFFF;
+    --text: #222222;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --dark: #1A1A2E;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  header {
+    background: var(--dark);
+    padding: 20px 24px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+  }
+
+  h1 {
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+
+  .updated {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+  }
+
+  h2 {
+    font-size: 17px;
+    margin-bottom: 8px;
+    color: var(--orange);
+  }
+
+  p, li {
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  ul {
+    padding-left: 20px;
+    margin-top: 8px;
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  a {
+    color: var(--orange);
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>Filara Kalkulačka</header>
+
+<main>
+  <h1>Zásady ochrany osobních údajů</h1>
+  <div class="updated">Naposledy aktualizováno: 11. 9. 2026</div>
+
+  <div class="card">
+    <h2>Shrnutí</h2>
+    <p>Filara Kalkulačka je jednoduchý nástroj pro výpočet ceny 3D tisku. Aplikace <strong>nesbírá, neukládá na server ani nesdílí žádné osobní údaje</strong>. Všechny výpočty probíhají přímo v telefonu a nikam se neodesílají.</p>
+  </div>
+
+  <div class="card">
+    <h2>Jaká data aplikace používá</h2>
+    <p>Aplikace lokálně v telefonu ukládá pouze:</p>
+    <ul>
+      <li><strong>Zvolený vzhled</strong> (světlý/tmavý režim) – uloženo v paměti prohlížeče (localStorage) pouze na tomto zařízení.</li>
+      <li><strong>Soubory aplikace pro offline použití</strong> (HTML, styly, ikony) – uloženo v mezipaměti zařízení (service worker), aby aplikace fungovala i bez připojení k internetu.</li>
+    </ul>
+    <p style="margin-top:10px">Zadané hodnoty (váha výrobku, doba tisku, cena filamentu, marže) se nikam neodesílají ani neukládají – po zavření aplikace zmizí.</p>
+  </div>
+
+  <div class="card">
+    <h2>Co aplikace nedělá</h2>
+    <ul>
+      <li>Nepoužívá analytiku ani sledovací nástroje</li>
+      <li>Nezobrazuje reklamy</li>
+      <li>Nevyžaduje registraci ani přihlášení</li>
+      <li>Nepřistupuje ke kontaktům, poloze, fotoaparátu ani jiným citlivým datům telefonu</li>
+      <li>Neodesílá žádná data na žádný server</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Externí zdroje</h2>
+    <p>Aplikace načítá písmo Barlow z Google Fonts (fonts.googleapis.com). Při načtení může být vaše IP adresa vidět poskytovatelem tohoto externího zdroje (Google) – aplikace samotná s tímto přenosem nijak nepracuje ani jej nijak nevyužívá.</p>
+  </div>
+
+  <div class="card">
+    <h2>Kontakt</h2>
+    <p>V případě dotazů k těmto zásadám nás můžete kontaktovat na e-mailu: <a href="mailto:klaudy.filip@gmail.com">klaudy.filip@gmail.com</a></p>
+  </div>
+</main>
+
+<footer>
+  Filara Kalkulačka · <a href="index.html">Zpět na kalkulačku</a>
+</footer>
+
+</body>
+</html>
