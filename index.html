@@ -1009,7 +1009,7 @@
         <label data-i18n="filamentPriceLabel">Cena filamentu / kg</label>
         <div class="input-wrap">
           <input type="number" id="filamentPrice" value="450" min="0" step="10" oninput="calculate()">
-          <span class="input-unit">Kč</span>
+          <span class="input-unit" id="filamentUnit">Kč</span>
         </div>
       </div>
     </div>
@@ -1234,25 +1234,39 @@
     calculate();
   }
 
-  function convertAmount(amountCzk) {
-    return amountCzk * (currencyRates[currentCurrency] || 1);
-  }
-
   function currencySymbol() {
     return CURRENCY_SYMBOLS[currentCurrency];
   }
 
-  function formatMoney(amountCzk, czkDecimals) {
-    const decimals = currentCurrency === 'CZK' ? (czkDecimals || 0) : 2;
-    return convertAmount(amountCzk).toFixed(decimals) + ' ' + currencySymbol();
+  // amount is already denominated in the currently selected currency
+  function fmt(amount, decimals) {
+    const d = decimals !== undefined ? decimals : (currentCurrency === 'CZK' ? 0 : 2);
+    return amount.toFixed(d) + ' ' + currencySymbol();
+  }
+
+  // Cena filamentu je zadávaná přímo ve zvolené měně (ne přepočtená z Kč) –
+  // při přepnutí měny se hodnota v poli převede na novou měnu.
+  let filamentPriceCurrency = 'CZK';
+
+  function convertFilamentInput(fromCur, toCur) {
+    const input = document.getElementById('filamentPrice');
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && fromCur !== toCur) {
+      const converted = val * (currencyRates[toCur] / currencyRates[fromCur]);
+      input.value = toCur === 'CZK' ? Math.round(converted) : Math.round(converted * 100) / 100;
+    }
+    input.step = toCur === 'CZK' ? '10' : '0.1';
+    filamentPriceCurrency = toCur;
   }
 
   function setCurrency(cur) {
+    convertFilamentInput(filamentPriceCurrency, cur);
     currentCurrency = cur;
     localStorage.setItem('filara-currency', cur);
     document.querySelectorAll('.currency-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.currency === cur);
     });
+    document.getElementById('filamentUnit').textContent = currencySymbol();
     calculate();
   }
 
@@ -1330,7 +1344,7 @@
     const timeHours = parseFloat(document.getElementById('timeHours').value) || 0;
     const timeMinutes = parseFloat(document.getElementById('timeMinutes').value) || 0;
     const time = timeHours + timeMinutes / 60;
-    const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || 450;
+    const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || (450 * currencyRates[currentCurrency]);
     const marginPct = parseInt(document.getElementById('margin').value) || 0;
 
     // Interpolated coeff based on exact time (not just whole-hour brackets)
@@ -1355,7 +1369,8 @@
     const rawProdPrice = matCost * coeff * materialFactor;
     const hasInput = weight > 0 && time > 0;
     const minFeeEnabled = document.getElementById('minFeeToggle').checked;
-    const prodPrice = (hasInput && minFeeEnabled) ? Math.max(rawProdPrice, MIN_FEE) : rawProdPrice;
+    const minFeeNative = MIN_FEE * currencyRates[currentCurrency]; // MIN_FEE je definován v Kč
+    const prodPrice = (hasInput && minFeeEnabled) ? Math.max(rawProdPrice, minFeeNative) : rawProdPrice;
     const minFeeApplied = hasInput && minFeeEnabled && prodPrice > rawProdPrice;
 
     // Final with margin
@@ -1363,16 +1378,16 @@
 
     // Update UI
     document.getElementById('priceDisplay').innerHTML =
-      convertAmount(finalPriceVal).toFixed(currentCurrency === 'CZK' ? 0 : 2) +
+      finalPriceVal.toFixed(currentCurrency === 'CZK' ? 0 : 2) +
       '<span class="currency">' + currencySymbol() + '</span>';
 
-    document.getElementById('prodPriceDisplay').textContent = formatMoney(prodPrice);
+    document.getElementById('prodPriceDisplay').textContent = fmt(prodPrice);
 
-    document.getElementById('minFeeAmountDisplay').textContent = formatMoney(MIN_FEE);
+    document.getElementById('minFeeAmountDisplay').textContent = fmt(minFeeNative);
 
     document.getElementById('minFeeNote').hidden = !minFeeApplied;
 
-    document.getElementById('matCost').textContent = formatMoney(matCost, 1);
+    document.getElementById('matCost').textContent = fmt(matCost, currentCurrency === 'CZK' ? 1 : 2);
 
     document.getElementById('coeffDisplay').textContent =
       '×' + (coeff > 0 ? parseFloat(coeff.toFixed(2)) : 0);
