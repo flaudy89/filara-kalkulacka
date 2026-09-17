@@ -187,7 +187,10 @@
   .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    row-gap: 8px;
   }
 
   /* ── LANGUAGE SWITCH ── */
@@ -217,6 +220,34 @@
 
   .lang-btn:hover { color: rgba(255,255,255,.8); }
   .lang-btn.active { background: var(--orange); color: #fff; }
+
+  /* ── CURRENCY SWITCH ── */
+  .currency-switch {
+    display: flex;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 2px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .currency-btn {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: .5px;
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: none;
+    background: none;
+    color: rgba(255,255,255,.5);
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .currency-btn:hover { color: rgba(255,255,255,.8); }
+  .currency-btn.active { background: var(--orange); color: #fff; }
 
   /* ── THEME SWITCH ── */
   .theme-switch {
@@ -386,6 +417,11 @@
 
     .lang-btn {
       padding: 5px 8px;
+      font-size: 10px;
+    }
+
+    .currency-btn {
+      padding: 5px 7px;
       font-size: 10px;
     }
   }
@@ -917,6 +953,11 @@
       <button type="button" class="lang-btn active" data-lang="cs" onclick="setLanguage('cs')">CZ</button>
       <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
     </div>
+    <div class="currency-switch" id="currencySwitch">
+      <button type="button" class="currency-btn active" data-currency="CZK" onclick="setCurrency('CZK')">CZK</button>
+      <button type="button" class="currency-btn" data-currency="USD" onclick="setCurrency('USD')">USD</button>
+      <button type="button" class="currency-btn" data-currency="EUR" onclick="setCurrency('EUR')">EUR</button>
+    </div>
     <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()" data-i18n-title="themeToggleLabel" data-i18n-aria="themeToggleLabel" aria-label="Přepnout světlý/tmavý režim" title="Přepnout světlý/tmavý režim">
       <span class="theme-thumb"></span>
     </button>
@@ -1024,7 +1065,7 @@
         </div>
         <label class="min-fee-toggle">
           <input type="checkbox" id="minFeeToggle" checked onchange="calculate()">
-          <span data-i18n="minFeeToggleLabel">Účtovat minimální poplatek 50 Kč</span>
+          <span data-i18n="minFeeToggleLabel">Účtovat minimální poplatek</span> <strong id="minFeeAmountDisplay">50 Kč</strong>
         </label>
         <div class="min-fee-note" id="minFeeNote" hidden data-i18n="minFeeNote">Uplatněn minimální poplatek (výpočet by jinak vyšel níž)</div>
         <div class="breakdown-item">
@@ -1090,7 +1131,7 @@
       resultTitle: 'Prodejní cena',
       detailsTitle: 'Podrobněji',
       prodPriceLabel: 'Výrobní cena',
-      minFeeToggleLabel: 'Účtovat minimální poplatek 50 Kč',
+      minFeeToggleLabel: 'Účtovat minimální poplatek',
       minFeeNote: 'Uplatněn minimální poplatek (výpočet by jinak vyšel níž)',
       materialCostLabel: 'Materiál:',
       coeffLabel: 'Koeficient:',
@@ -1122,7 +1163,7 @@
       resultTitle: 'Selling price',
       detailsTitle: 'Details',
       prodPriceLabel: 'Production cost',
-      minFeeToggleLabel: 'Apply minimum fee (50 Kč)',
+      minFeeToggleLabel: 'Apply minimum fee',
       minFeeNote: 'Minimum fee applied (price would otherwise be lower)',
       materialCostLabel: 'Material:',
       coeffLabel: 'Coefficient:',
@@ -1162,6 +1203,57 @@
     });
 
     renderCoeffTable(lastActiveIdx);
+  }
+
+  // ── CURRENCY ──
+  const CURRENCY_SYMBOLS = { CZK: 'Kč', USD: '$', EUR: '€' };
+  let currentCurrency = localStorage.getItem('filara-currency') || 'CZK';
+  let currencyRates = { CZK: 1, USD: 0.0475, EUR: 0.0411 }; // fallback, replaced by live rates below
+
+  async function loadExchangeRates() {
+    const cacheKey = 'filara-fx-rates';
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch (e) {}
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    if (cached && cached.rates && (Date.now() - cached.fetchedAt) < oneDay) {
+      currencyRates = cached.rates;
+      calculate();
+      return;
+    }
+
+    try {
+      const res = await fetch('https://api.frankfurter.dev/v1/latest?from=CZK&to=USD,EUR');
+      const data = await res.json();
+      currencyRates = { CZK: 1, USD: data.rates.USD, EUR: data.rates.EUR };
+      localStorage.setItem(cacheKey, JSON.stringify({ rates: currencyRates, fetchedAt: Date.now() }));
+    } catch (e) {
+      if (cached && cached.rates) currencyRates = cached.rates;
+      // else keep the static fallback already set above
+    }
+    calculate();
+  }
+
+  function convertAmount(amountCzk) {
+    return amountCzk * (currencyRates[currentCurrency] || 1);
+  }
+
+  function currencySymbol() {
+    return CURRENCY_SYMBOLS[currentCurrency];
+  }
+
+  function formatMoney(amountCzk, czkDecimals) {
+    const decimals = currentCurrency === 'CZK' ? (czkDecimals || 0) : 2;
+    return convertAmount(amountCzk).toFixed(decimals) + ' ' + currencySymbol();
+  }
+
+  function setCurrency(cur) {
+    currentCurrency = cur;
+    localStorage.setItem('filara-currency', cur);
+    document.querySelectorAll('.currency-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.currency === cur);
+    });
+    calculate();
   }
 
   // Příplatek za náročnější materiály (vyhřívaná komora/podložka po celou dobu tisku navíc)
@@ -1271,15 +1363,16 @@
 
     // Update UI
     document.getElementById('priceDisplay').innerHTML =
-      Math.round(finalPriceVal) + '<span class="currency">Kč</span>';
+      convertAmount(finalPriceVal).toFixed(currentCurrency === 'CZK' ? 0 : 2) +
+      '<span class="currency">' + currencySymbol() + '</span>';
 
-    document.getElementById('prodPriceDisplay').textContent =
-      Math.round(prodPrice) + ' Kč';
+    document.getElementById('prodPriceDisplay').textContent = formatMoney(prodPrice);
+
+    document.getElementById('minFeeAmountDisplay').textContent = formatMoney(MIN_FEE);
 
     document.getElementById('minFeeNote').hidden = !minFeeApplied;
 
-    document.getElementById('matCost').textContent =
-      matCost.toFixed(1) + ' Kč';
+    document.getElementById('matCost').textContent = formatMoney(matCost, 1);
 
     document.getElementById('coeffDisplay').textContent =
       '×' + (coeff > 0 ? parseFloat(coeff.toFixed(2)) : 0);
@@ -1303,6 +1396,8 @@
 
   // Init
   setLanguage(currentLang);
+  setCurrency(currentCurrency);
+  loadExchangeRates();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
