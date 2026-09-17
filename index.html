@@ -664,6 +664,25 @@
     margin: -4px 0 8px;
   }
 
+  .min-fee-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin: 6px 0 8px;
+    user-select: none;
+  }
+
+  .min-fee-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--orange);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
   /* ── RESULT ── */
   .result-section {
     background: linear-gradient(135deg, var(--dark) 0%, #2D2B55 100%);
@@ -966,7 +985,11 @@
         <div class="details-row">
           Výrobní cena <strong id="prodPriceDisplay">0 Kč</strong>
         </div>
-        <div class="min-fee-note" id="minFeeNote" hidden>Zahrnuje minimální poplatek 50 Kč</div>
+        <label class="min-fee-toggle">
+          <input type="checkbox" id="minFeeToggle" checked onchange="calculate()">
+          Účtovat minimální poplatek 50 Kč
+        </label>
+        <div class="min-fee-note" id="minFeeNote" hidden>Uplatněn minimální poplatek (výpočet by jinak vyšel níž)</div>
         <div class="breakdown-item">
           <span class="breakdown-dot" style="background:#FA6831"></span>
           Materiál: <strong id="matCost">0 Kč</strong>
@@ -1095,11 +1118,12 @@
     const matCost = weight * filamentPrice / 1000;
     const materialFactor = materialFactors[selectedMaterial].factor;
 
-    // Production price (s minimálním poplatkem za manipulaci u malých tisků)
+    // Production price (s volitelným minimálním poplatkem za manipulaci u malých tisků)
     const rawProdPrice = matCost * coeff * materialFactor;
     const hasInput = weight > 0 && time > 0;
-    const prodPrice = hasInput ? Math.max(rawProdPrice, MIN_FEE) : rawProdPrice;
-    const minFeeApplied = hasInput && prodPrice > rawProdPrice;
+    const minFeeEnabled = document.getElementById('minFeeToggle').checked;
+    const prodPrice = (hasInput && minFeeEnabled) ? Math.max(rawProdPrice, MIN_FEE) : rawProdPrice;
+    const minFeeApplied = hasInput && minFeeEnabled && prodPrice > rawProdPrice;
 
     // Final with margin
     const finalPriceVal = prodPrice * (1 + marginPct / 100);
