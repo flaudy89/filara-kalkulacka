@@ -458,6 +458,58 @@
     padding: 10px 12px;
   }
 
+  /* ── MATERIAL TYPE ── */
+  .material-section {
+    padding: 0 28px 24px;
+  }
+
+  .material-label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 10px;
+  }
+
+  .material-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .material-chip {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .material-chip:hover {
+    border-color: var(--orange);
+    color: var(--orange-dark);
+  }
+
+  .material-chip.active {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #fff;
+  }
+
+  .material-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
   /* ── KOEFICIENT INFO ── */
   .coeff-info {
     margin: 0 28px 24px;
@@ -865,6 +917,19 @@
       </div>
     </div>
 
+    <!-- Material type -->
+    <div class="material-section">
+      <label class="material-label">Typ filamentu</label>
+      <div class="material-chips" id="materialChips">
+        <button type="button" class="material-chip active" data-material="PLA" onclick="selectMaterial('PLA')">PLA</button>
+        <button type="button" class="material-chip" data-material="PETG" onclick="selectMaterial('PETG')">PETG</button>
+        <button type="button" class="material-chip" data-material="ABS" onclick="selectMaterial('ABS')">ABS / ASA</button>
+        <button type="button" class="material-chip" data-material="NYLON" onclick="selectMaterial('NYLON')">Nylon</button>
+        <button type="button" class="material-chip" data-material="PC" onclick="selectMaterial('PC')">PC</button>
+      </div>
+      <div class="material-note">Náročnější materiály vyžadují vyhřívanou komoru/podložku po celou dobu tisku – promítá se to jako malý příplatek navíc k ceně.</div>
+    </div>
+
     <!-- Koeficient table -->
     <div class="coeff-info" id="coeffInfo">
       <h3 onclick="toggleCoeff()">
@@ -910,6 +975,10 @@
           <span class="breakdown-dot" style="background:#818CF8"></span>
           Koeficient: <strong id="coeffDisplay">×0</strong>
         </div>
+        <div class="breakdown-item">
+          <span class="breakdown-dot" style="background:#10B981"></span>
+          Příplatek za materiál: <strong id="materialSurchargeDisplay">×1.00</strong>
+        </div>
         <div class="margin-header" style="margin-top:14px">
           <label>Vaše marže</label>
           <span class="margin-value" id="marginLabel">0 %</span>
@@ -933,6 +1002,24 @@
     const next = isDark ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('filara-theme', next);
+  }
+
+  // Příplatek za náročnější materiály (vyhřívaná komora/podložka po celou dobu tisku navíc)
+  const materialFactors = {
+    PLA:   { label: 'PLA',       factor: 1.00 },
+    PETG:  { label: 'PETG',      factor: 1.04 },
+    ABS:   { label: 'ABS / ASA', factor: 1.08 },
+    NYLON: { label: 'Nylon',     factor: 1.10 },
+    PC:    { label: 'PC',        factor: 1.15 },
+  };
+  let selectedMaterial = 'PLA';
+
+  function selectMaterial(key) {
+    selectedMaterial = key;
+    document.querySelectorAll('.material-chip').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.material === key);
+    });
+    calculate();
   }
 
   // Koeficienty – plynulejší škála
@@ -1006,9 +1093,10 @@
 
     // Material cost
     const matCost = weight * filamentPrice / 1000;
+    const materialFactor = materialFactors[selectedMaterial].factor;
 
     // Production price (s minimálním poplatkem za manipulaci u malých tisků)
-    const rawProdPrice = matCost * coeff;
+    const rawProdPrice = matCost * coeff * materialFactor;
     const hasInput = weight > 0 && time > 0;
     const prodPrice = hasInput ? Math.max(rawProdPrice, MIN_FEE) : rawProdPrice;
     const minFeeApplied = hasInput && prodPrice > rawProdPrice;
@@ -1030,6 +1118,9 @@
 
     document.getElementById('coeffDisplay').textContent =
       '×' + (coeff > 0 ? parseFloat(coeff.toFixed(2)) : 0);
+
+    document.getElementById('materialSurchargeDisplay').textContent =
+      '×' + materialFactor.toFixed(2);
 
     document.getElementById('marginLabel').textContent =
       marginPct + ' %';
