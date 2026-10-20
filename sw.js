@@ -1,4 +1,4 @@
-const CACHE = 'filara-kalkulacka-v2';
+const CACHE = 'filara-kalkulacka-v3';
 const ASSETS = [
   './',
   './index.html',

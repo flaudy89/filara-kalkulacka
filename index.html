@@ -473,6 +473,16 @@
     font-weight: 400;
   }
 
+  .time-wrap input {
+    padding: 14px 4px;
+    text-align: center;
+    max-width: 56px;
+  }
+
+  .time-wrap .input-unit {
+    padding: 0 5px;
+  }
+
   .time-sep {
     font-size: 18px;
     font-weight: 700;
@@ -992,11 +1002,14 @@
       </div>
       <div class="input-group">
         <label data-i18n="timeLabel">Doba tisku</label>
-        <div class="input-wrap">
-          <input type="number" id="timeHours" placeholder="0" min="0" step="1" oninput="calculate()" style="max-width:70px">
+        <div class="input-wrap time-wrap">
+          <input type="number" id="timeDays" placeholder="0" min="0" step="1" oninput="calculate()">
+          <span class="input-unit" data-i18n="daysUnit">dny</span>
+          <span class="time-sep">:</span>
+          <input type="number" id="timeHours" placeholder="0" min="0" step="1" oninput="calculate()">
           <span class="input-unit" data-i18n="hoursUnit">hod</span>
           <span class="time-sep">:</span>
-          <input type="number" id="timeMinutes" placeholder="0" min="0" max="59" step="1" oninput="calculate()" style="max-width:70px">
+          <input type="number" id="timeMinutes" placeholder="0" min="0" max="59" step="1" oninput="calculate()">
           <span class="input-unit" data-i18n="minutesUnit">min</span>
         </div>
       </div>
@@ -1118,6 +1131,7 @@
       weightLabel: 'Váha výrobku',
       weightUnit: 'gramů',
       timeLabel: 'Doba tisku',
+      daysUnit: 'dny',
       hoursUnit: 'hod',
       minutesUnit: 'min',
       filamentPriceLabel: 'Cena filamentu / kg',
@@ -1150,6 +1164,7 @@
       weightLabel: 'Product weight',
       weightUnit: 'grams',
       timeLabel: 'Print time',
+      daysUnit: 'd',
       hoursUnit: 'h',
       minutesUnit: 'min',
       filamentPriceLabel: 'Filament price / kg',
@@ -1341,9 +1356,10 @@
 
   function calculate() {
     const weight = parseFloat(document.getElementById('weight').value) || 0;
+    const timeDays = parseFloat(document.getElementById('timeDays').value) || 0;
     const timeHours = parseFloat(document.getElementById('timeHours').value) || 0;
     const timeMinutes = parseFloat(document.getElementById('timeMinutes').value) || 0;
-    const time = timeHours + timeMinutes / 60;
+    const time = timeDays * 24 + timeHours + timeMinutes / 60;
     const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || (450 * currencyRates[currentCurrency]);
     const marginPct = parseInt(document.getElementById('margin').value) || 0;
 
