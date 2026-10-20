@@ -1317,8 +1317,14 @@
     { maxHours: 12,  coeff: 5.8, label: '9–12 hod',   labelEn: '9–12h' },
     { maxHours: 16,  coeff: 6.2, label: '12–16 hod',  labelEn: '12–16h' },
     { maxHours: 24,  coeff: 6.5, label: '16–24 hod',  labelEn: '16–24h' },
-    { maxHours: Infinity, coeff: 7.0, label: '24+ hod', labelEn: '24h+' },
+    { maxHours: 48,  coeff: 7.0, label: '24–48 hod',  labelEn: '24–48h' },
+    { maxHours: 72,  coeff: 7.4, label: '2–3 dny',    labelEn: '2–3 days' },
+    { maxHours: 120, coeff: 8.0, label: '3–5 dní',    labelEn: '3–5 days' },
+    { maxHours: 168, coeff: 8.5, label: '5–7 dní',    labelEn: '5–7 days' },
+    { maxHours: Infinity, coeff: 8.5, label: '7+ dní', labelEn: '7+ days' },
   ];
+
+  const COEFF_SLOPE_AFTER_WEEK = 0.0104; // +0,5 za každých dalších 48 h po 7 dnech
 
   function getInterpolatedCoeff(hours) {
     if (hours <= 0) return 0;
@@ -1327,6 +1333,7 @@
     let prevCoeff = coeffTable[0].coeff;
     for (let i = 1; i < coeffTable.length; i++) {
       const row = coeffTable[i];
+      if (row.maxHours === Infinity) break;
       if (hours <= row.maxHours) {
         const t = (hours - prevMax) / (row.maxHours - prevMax);
         return prevCoeff + t * (row.coeff - prevCoeff);
@@ -1334,7 +1341,8 @@
       prevMax = row.maxHours;
       prevCoeff = row.coeff;
     }
-    return coeffTable[coeffTable.length - 1].coeff;
+    // nad posledním pásmem (7 dní) koeficient dál plynule roste
+    return coeffTable[coeffTable.length - 1].coeff + (hours - 168) * COEFF_SLOPE_AFTER_WEEK;
   }
 
   let lastActiveIdx = -1;
